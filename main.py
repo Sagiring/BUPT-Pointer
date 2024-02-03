@@ -91,8 +91,8 @@ class Pointer(FluentWindow,Ui_Pointer):
 
     def getPoints(self):
         tableLists = []
-        self.StateToolTip = StateToolTip("Processing","获取数据中",self.PrimaryPushButton)
-
+        # self.StateToolTip = StateToolTip("Processing","获取数据中",self.PrimaryPushButton)
+        # self.StateToolTip.show()
 
 
         classesDic =  getClassPoint(self.loginSession,self.account,self.ComboBox.text())
@@ -109,7 +109,7 @@ class Pointer(FluentWindow,Ui_Pointer):
             for j in range(6):
                 self.TableWidget.setItem(i, j, QTableWidgetItem(row[j]))
         self.TableWidget.resizeColumnsToContents()
-        self.StateToolTip
+        # self.StateToolTip.close()
     
     def showSuccessInfoBar(self):
         InfoBar.success(
