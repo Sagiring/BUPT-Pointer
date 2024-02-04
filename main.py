@@ -256,7 +256,7 @@ class InfoWidget(QFrame,Ui_info):
     def __init__(self,parent=None) -> None:
         super().__init__(parent=parent)
         self.setupUi(self)
-        self.version.setText('v1.0')
+        self.version.setText('v1.1')
         self.HyperlinkButton.setIcon(FluentIcon.LINK)
         self.HyperlinkButton.setUrl('https://github.com/Sagiring/BUPT-Pointer')
 
