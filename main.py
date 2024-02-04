@@ -4,6 +4,7 @@ from pointer.info_ui import Ui_info
 from pointer.pointer import (PingJwgl,loginJwgl,getClassPoint)
 from PySide6.QtWidgets import (QFrame,QApplication,QTableWidgetItem,QHeaderView)
 from PySide6.QtCore  import (Qt,QObject,QThread,Signal)
+from PySide6.QtGui import (QIcon, QDesktopServices)
 from qfluentwidgets import (FluentWindow,InfoBar,StateToolTip,InfoBarPosition,FluentIcon)
 import sys
 import time
@@ -16,6 +17,7 @@ class loginUI(FluentWindow,Ui_login):
         super().__init__()
         self.setupUi(self)
         self.setupThread()
+        self.initWindow()
         self.loginPushButton.clicked.connect(self.login)
         self.isLogining = False
         if not os.path.exists('./pointer'):
@@ -28,6 +30,12 @@ class loginUI(FluentWindow,Ui_login):
             if len(AccPw) == 2:
                self.passwdInput.setText(AccPw[1])
                self.CheckBox.setChecked(True)
+      
+
+    def initWindow(self):
+        self.setWindowIcon(QIcon('./img/favicon.ico'))
+        self.setWindowTitle('Pointer')
+
         
     def setupThread(self):
         self.QThreading = QThread(self)  #创建Qthread
@@ -258,12 +266,17 @@ class PointerMain(FluentWindow):
         self.pointDetailInterface = PointerWidget(loginSession,accountName,account,self)
         self.infoInterface = InfoWidget(self)
         self.initNavigation()
+        self.initWindow()
 
     def initNavigation(self):
         self.navigationInterface.setExpandWidth(150)
         self.addSubInterface(self.pointDetailInterface, FluentIcon.APPLICATION, 'Point Detail')
         self.addSubInterface(self.infoInterface, FluentIcon.INFO, 'Info')
-  
+
+    def initWindow(self):
+        self.setWindowIcon(QIcon('./img/favicon.ico'))
+        self.setWindowTitle('Pointer')
+
 
 def main():
     
