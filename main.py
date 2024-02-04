@@ -11,9 +11,11 @@ import os
 
 
 class loginUI(FluentWindow,Ui_login):
+    userData = Signal(list)
     def __init__(self) -> None:
         super().__init__()
         self.setupUi(self)
+        self.setupThread()
         self.loginPushButton.clicked.connect(self.login)
         if os.path.exists('./pointer/cache'):
             with open('./pointer/cache','r',encoding='utf-8') as f:
@@ -24,37 +26,66 @@ class loginUI(FluentWindow,Ui_login):
                self.passwdInput.setText(AccPw[1])
                self.CheckBox.setChecked(True)
             self.isLogining = False
+    def setupThread(self):
+        self.QThreading = QThread(self)  #创建Qthread
+        self.workThread = loginWorkThread() #示例化 占时的线程 
+        self.workThread.moveToThread(self.QThreading) #移入到Qthread中
+        self.workThread.isPingJwgl.connect(self.recvPingjwgl)
+        self.workThread.isLoginJwgl.connect(self.recvloginJwgl)
+        self.userData.connect(self.workThread.loginJwgl)
+        
+
+    def recvPingjwgl(self,isPingJwgl):
+        self.StateToolTip.setContent('测试教务连接中')
+        if not isPingJwgl:
+            self.showInfoBarFail('无法连接到教务系统，请检查网络')
+            self.isLogining = False
+            self.StateToolTip.close()
+        else:
+            self.StateToolTip.setContent('尝试登录中')
+            if self.account == '' or self.passwd == '':
+                self.showInfoBarFail('账号或密码为空')
+                self.isLogining = False
+                self.StateToolTip.close()
+            else:
+                self.userData.emit([self.account,self.passwd])
+
+
+    def recvloginJwgl(self,isLoginJwgl):
+        loginSession = isLoginJwgl[0]
+        accountName = isLoginJwgl[1]
+        if loginSession:
+                self.StateToolTip.setContent('登录成功，正在转入')
+                self.StateToolTip.setState(True)
+                self.loginSession = loginSession
+                self.accountName = accountName
+                time.sleep(1)
+                self.PointerWidget = Pointer(self.loginSession,self.accountName,self.account)
+                self.PointerWidget.show()
+                if not os.path.exists('./pointer'):
+                    os.makedirs('./pointer')
+                with open('./pointer/cache','w',encoding='utf-8') as f:
+                    if self.CheckBox.isChecked():
+                        f.write(self.account+'\n%%%\n'+self.passwd)
+                    else:
+                        f.write(self.account)
+                self.QThreading.exit()
+                self.close()
+        else:
+            self.showInfoBarFail('无法登录教务，请检查账号密码')
+            self.isLogining = False
+            self.StateToolTip.close()
 
     def login(self):
-        
-        account = self.accountInput.text()
-        passwd = self.passwdInput.text()
+        self.account = self.accountInput.text()
+        self.passwd = self.passwdInput.text()
         if not self.isLogining:
             self.isLogining = True
-            if PingJwgl():
-                if account == '' or passwd == '':
-                    self.showInfoBarFail('账号或密码为空')
-                else:
-                    loginSession,accountName = loginJwgl(account,passwd)
-                    if loginSession:
-                        self.loginSession = loginSession
-                        self.accountName = accountName
-                        self.accountInput = account  
-                        self.PointerWidget = Pointer(self.loginSession,self.accountName,self.accountInput)
-                        self.PointerWidget.show()
-                        if not os.path.exists('./pointer'):
-                            os.makedirs('./pointer')
-                        with open('./pointer/cache','w',encoding='utf-8') as f:
-                            if self.CheckBox.isChecked():
-                                f.write(account+'\n%%%\n'+passwd)
-                            else:
-                                f.write(account)
-                        self.close()
-                    else:
-                        self.showInfoBarFail('无法登录教务，请检查账号密码')
-            else:
-                self.showInfoBarFail('无法连接到教务系统，请检查网络')
-            self.isLogining = False
+            self.StateToolTip = StateToolTip("Processing","尝试登录中",self)
+            self.StateToolTip.move(20,30)
+            self.StateToolTip.show()
+            self.QThreading.start()
+            self.workThread.pingJwgl() 
         else:
             InfoBar.info(
             title='!!!',
@@ -77,7 +108,24 @@ class loginUI(FluentWindow,Ui_login):
             duration=3000
         )
 
-  
+class loginWorkThread(QObject):
+    isPingJwgl = Signal(bool)
+    isLoginJwgl = Signal(list)
+    def __init__(self) -> None:
+            super().__init__()
+    
+    def pingJwgl(self):
+        if PingJwgl():
+            self.isPingJwgl.emit(True)
+        else:
+            self.isPingJwgl.emit(False)
+
+    def loginJwgl(self,userData):
+        loginSession,accountName = loginJwgl(userData[0],userData[1])
+        self.isLoginJwgl.emit([loginSession,accountName])
+
+
+
 
 class Pointer(FluentWindow,Ui_Pointer):
     SearchData = Signal(list)
@@ -116,26 +164,26 @@ class Pointer(FluentWindow,Ui_Pointer):
 
 
     def startSearch(self):
-
-        if not self.Searching:
-            self.Searching = True
-            self.StateToolTip = StateToolTip("Processing","获取数据中",self)
-            self.StateToolTip.move(625,640)
-            self.StateToolTip.isClosable = False
-            self.StateToolTip.show()
-            self.QThreading.start()
-            self.SearchData.emit([self.loginSession,self.account,self.ComboBox.text()])
+        if self.ComboBox.text():
+            if not self.Searching:
+                self.Searching = True
+                self.StateToolTip = StateToolTip("Processing","获取数据中",self)
+                self.StateToolTip.move(625,640)
+                self.StateToolTip.show()
+                self.QThreading.start()
+                self.SearchData.emit([self.loginSession,self.account,self.ComboBox.text()])
+            else:
+                InfoBar.info(
+                title='!!!',
+                content='查询中请稍后',
+                position=InfoBarPosition.TOP_LEFT,
+                isClosable=False,
+                parent=self,
+                orient= Qt.Horizontal,
+                duration=3000
+            )
         else:
-            InfoBar.info(
-            title='!!!',
-            content='查询中请稍后',
-            position=InfoBarPosition.TOP_LEFT,
-            isClosable=False,
-            parent=self,
-            orient= Qt.Horizontal,
-            duration=3000
-        )
-
+            self.showInfoBarFail('请先选择学期')
 
     def setTableWidget(self,tableLists):
         self.TableWidget.setRowCount(len(tableLists))
@@ -147,11 +195,13 @@ class Pointer(FluentWindow,Ui_Pointer):
         self.StateToolTip.setState(True)
         self.StateToolTip = None
         self.Searching = False
+        self.QThreading.exit()
         
-    def showSuccessInfoBar(self):
-        InfoBar.success(
-            title='Success!',
-            content='已登录，正在跳转',
+
+    def showInfoBarFail(self,msg):
+        InfoBar.error(
+            title='Fail!',
+            content=msg,
             position=InfoBarPosition.TOP_LEFT,
             isClosable=False,
             parent=self,
