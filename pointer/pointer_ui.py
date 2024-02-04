@@ -15,8 +15,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QHBoxLayout, QHeaderView, QSizePolicy,
-    QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QHeaderView,
+    QSizePolicy, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from qfluentwidgets import (CaptionLabel, ComboBox, PrimaryPushButton, PushButton,
     StrongBodyLabel, TableWidget)
@@ -25,27 +25,25 @@ class Ui_Pointer(object):
     def setupUi(self, Pointer):
         if not Pointer.objectName():
             Pointer.setObjectName(u"Pointer")
-        Pointer.resize(923, 728)
-        Pointer.setMinimumSize(QSize(923, 728))
-        Pointer.setMaximumSize(QSize(923, 728))
-        self.widget = QWidget(Pointer)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(70, 70, 831, 631))
-        self.verticalLayout = QVBoxLayout(self.widget)
+        Pointer.resize(1117, 728)
+        Pointer.setMinimumSize(QSize(1117, 612))
+        Pointer.setMaximumSize(QSize(16777215, 16777215))
+        self.gridLayout = QGridLayout(Pointer)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.StrongBodyLabel_2 = StrongBodyLabel(self.widget)
+        self.StrongBodyLabel_2 = StrongBodyLabel(Pointer)
         self.StrongBodyLabel_2.setObjectName(u"StrongBodyLabel_2")
         self.StrongBodyLabel_2.setMinimumSize(QSize(61, 31))
         self.StrongBodyLabel_2.setMaximumSize(QSize(61, 31))
 
         self.horizontalLayout_2.addWidget(self.StrongBodyLabel_2)
 
-        self.Account = CaptionLabel(self.widget)
+        self.Account = CaptionLabel(Pointer)
         self.Account.setObjectName(u"Account")
         self.Account.setMinimumSize(QSize(191, 31))
 
@@ -56,20 +54,20 @@ class Ui_Pointer(object):
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.StrongBodyLabel = StrongBodyLabel(self.widget)
+        self.StrongBodyLabel = StrongBodyLabel(Pointer)
         self.StrongBodyLabel.setObjectName(u"StrongBodyLabel")
         self.StrongBodyLabel.setMaximumSize(QSize(29, 32))
 
         self.horizontalLayout.addWidget(self.StrongBodyLabel)
 
-        self.ComboBox = ComboBox(self.widget)
+        self.ComboBox = ComboBox(Pointer)
         self.ComboBox.setObjectName(u"ComboBox")
         self.ComboBox.setMinimumSize(QSize(151, 32))
         self.ComboBox.setMaximumSize(QSize(151, 32))
 
         self.horizontalLayout.addWidget(self.ComboBox)
 
-        self.PrimaryPushButton = PrimaryPushButton(self.widget)
+        self.PrimaryPushButton = PrimaryPushButton(Pointer)
         self.PrimaryPushButton.setObjectName(u"PrimaryPushButton")
         self.PrimaryPushButton.setMaximumSize(QSize(54, 32))
         self.PrimaryPushButton.setLayoutDirection(Qt.LeftToRight)
@@ -84,13 +82,16 @@ class Ui_Pointer(object):
 
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.TableWidget = TableWidget(self.widget)
+        self.TableWidget = TableWidget(Pointer)
         self.TableWidget.setObjectName(u"TableWidget")
 
         self.horizontalLayout_4.addWidget(self.TableWidget)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_4)
+
+
+        self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
 
 
         self.retranslateUi(Pointer)

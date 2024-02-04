@@ -1,10 +1,10 @@
-
 from pointer.login_ui import Ui_login
 from pointer.pointer_ui import Ui_Pointer
+from pointer.info_ui import Ui_info
 from pointer.pointer import (PingJwgl,loginJwgl,getClassPoint)
-from PySide6.QtWidgets import (QApplication,QTableWidgetItem)
+from PySide6.QtWidgets import (QFrame,QApplication,QTableWidgetItem,QHeaderView)
 from PySide6.QtCore  import (Qt,QObject,QThread,Signal)
-from qfluentwidgets import (FluentWindow,InfoBar,StateToolTip,InfoBarPosition)
+from qfluentwidgets import (FluentWindow,InfoBar,StateToolTip,InfoBarPosition,FluentIcon)
 import sys
 import time
 import os
@@ -63,8 +63,8 @@ class loginUI(FluentWindow,Ui_login):
                 self.loginSession = loginSession
                 self.accountName = accountName
                 time.sleep(1)
-                self.PointerWidget = Pointer(self.loginSession,self.accountName,self.account)
-                self.PointerWidget.show()
+                self.PointerMain = PointerMain(self.loginSession,self.accountName,self.account)
+                self.PointerMain.show()
                 with open('./pointer/cache','w',encoding='utf-8') as f:
                     if self.CheckBox.isChecked():
                         f.write(self.account+'\n%%%\n'+self.passwd)
@@ -128,10 +128,10 @@ class loginWorkThread(QObject):
 
 
 
-class Pointer(FluentWindow,Ui_Pointer):
+class PointerWidget(Ui_Pointer,QFrame):
     SearchData = Signal(list)
-    def __init__(self,loginSession,accountName,account) -> None:
-        super().__init__()
+    def __init__(self,loginSession,accountName,account,parent=None) -> None:
+        super().__init__(parent=parent)
         self.setupUi(self)
         self.setupThread()
         self.loginSession = loginSession
@@ -152,6 +152,9 @@ class Pointer(FluentWindow,Ui_Pointer):
         self.TableWidget.setColumnCount(7)
         self.TableWidget.verticalHeader().hide()
         self.TableWidget.setHorizontalHeaderLabels(['科目', '学分', '期末', '期中', '平时','实验','总分'])
+        self.TableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        # self.TableWidget.horizontalHeader().setSectionsClickable(False)
+        # self.TableWidget.setSortingEnabled(True)
         self.PrimaryPushButton.clicked.connect(self.startSearch)
         self.Searching = False
        
@@ -170,7 +173,7 @@ class Pointer(FluentWindow,Ui_Pointer):
             if not self.Searching:
                 self.Searching = True
                 self.StateToolTip = StateToolTip("Processing","获取数据中",self)
-                self.StateToolTip.move(625,640)
+                self.StateToolTip.move(825,540)
                 self.StateToolTip.show()
                 self.QThreading.start()
                 self.SearchData.emit([self.loginSession,self.account,self.ComboBox.text()])
@@ -188,11 +191,14 @@ class Pointer(FluentWindow,Ui_Pointer):
             self.showInfoBarFail('请先选择学期')
 
     def setTableWidget(self,tableLists):
+        self.TableWidget.clearContents()
         self.TableWidget.setRowCount(len(tableLists))
         for i, row in enumerate(tableLists):
             for j in range(len(row)):
                 self.TableWidget.setItem(i, j, QTableWidgetItem(row[j]))
         self.TableWidget.resizeColumnsToContents()
+        self.TableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.TableWidget.setSortingEnabled(True)
         self.StateToolTip.setContent('获取完成')
         self.StateToolTip.setState(True)
         self.StateToolTip = None
@@ -237,6 +243,27 @@ class SearchWorkThread(QObject):
                             classesDic[classID][2][6]+'*'+classesDic[classID][2][7],
                             sumScore])
             self.send_classesDic.emit(tableLists)
+
+class InfoWidget(QFrame,Ui_info):
+    def __init__(self,parent=None) -> None:
+        super().__init__(parent=parent)
+        self.setupUi(self)
+        self.version.setText('v1.0')
+        self.HyperlinkButton.setIcon(FluentIcon.LINK)
+        self.HyperlinkButton.setUrl('https://github.com/Sagiring/BUPT-Pointer')
+
+class PointerMain(FluentWindow):
+    def __init__(self,loginSession,accountName,account):
+        super().__init__()
+        self.pointDetailInterface = PointerWidget(loginSession,accountName,account,self)
+        self.infoInterface = InfoWidget(self)
+        self.initNavigation()
+
+    def initNavigation(self):
+        self.navigationInterface.setExpandWidth(150)
+        self.addSubInterface(self.pointDetailInterface, FluentIcon.APPLICATION, 'Point Detail')
+        self.addSubInterface(self.infoInterface, FluentIcon.INFO, 'Info')
+  
 
 def main():
     
