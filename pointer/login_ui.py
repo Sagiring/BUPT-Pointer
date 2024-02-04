@@ -53,12 +53,12 @@ class Ui_login(object):
 
         self.verticalLayout.addWidget(self.CaptionLabel)
 
-        self.account = LineEdit(self.layoutWidget)
-        self.account.setObjectName(u"account")
-        self.account.setMinimumSize(QSize(211, 33))
-        self.account.setMaximumSize(QSize(211, 33))
+        self.accountInput = LineEdit(self.layoutWidget)
+        self.accountInput.setObjectName(u"accountInput")
+        self.accountInput.setMinimumSize(QSize(211, 33))
+        self.accountInput.setMaximumSize(QSize(211, 33))
 
-        self.verticalLayout.addWidget(self.account)
+        self.verticalLayout.addWidget(self.accountInput)
 
 
         self.verticalLayout_3.addLayout(self.verticalLayout)
@@ -72,12 +72,12 @@ class Ui_login(object):
 
         self.verticalLayout_2.addWidget(self.CaptionLabel_2)
 
-        self.passwd = PasswordLineEdit(self.layoutWidget)
-        self.passwd.setObjectName(u"passwd")
-        self.passwd.setMinimumSize(QSize(211, 33))
-        self.passwd.setMaximumSize(QSize(211, 33))
+        self.passwdInput = PasswordLineEdit(self.layoutWidget)
+        self.passwdInput.setObjectName(u"passwdInput")
+        self.passwdInput.setMinimumSize(QSize(211, 33))
+        self.passwdInput.setMaximumSize(QSize(211, 33))
 
-        self.verticalLayout_2.addWidget(self.passwd)
+        self.verticalLayout_2.addWidget(self.passwdInput)
 
 
         self.verticalLayout_3.addLayout(self.verticalLayout_2)
@@ -85,7 +85,7 @@ class Ui_login(object):
         self.label = QLabel(login)
         self.label.setObjectName(u"label")
         self.label.setGeometry(QRect(0, 0, 841, 621))
-        self.label.setPixmap(QPixmap(u"img/IMG_2596.JPG"))
+        self.label.setPixmap(QPixmap(u"./img/IMG_2596.JPG"))
         self.label.setScaledContents(True)
         self.CheckBox = CheckBox(login)
         self.CheckBox.setObjectName(u"CheckBox")

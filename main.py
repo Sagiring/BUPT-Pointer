@@ -1,12 +1,14 @@
+from typing import Optional
 from pointer.login_ui import Ui_login
 from pointer.pointer_ui import Ui_Pointer
 from pointer.pointer import (PingJwgl,loginJwgl,getClassPoint)
 from PySide6.QtWidgets import (QApplication,QTableWidgetItem)
-from PySide6.QtCore  import (Qt)
+from PySide6.QtCore  import (Qt,QObject,QThread,Signal)
 from qfluentwidgets import (FluentWindow,InfoBar,StateToolTip,InfoBarPosition)
 import sys
 import time
 import os
+
 
 class loginUI(FluentWindow,Ui_login):
     def __init__(self) -> None:
@@ -17,39 +19,52 @@ class loginUI(FluentWindow,Ui_login):
             with open('./pointer/cache','r',encoding='utf-8') as f:
                 AccPw = f.read()
             AccPw = AccPw.split('\n%%%\n')
-            self.account.setText(AccPw[0])
+            self.accountInput.setText(AccPw[0])
             if len(AccPw) == 2:
-               self.passwd.setText(AccPw[1])
+               self.passwdInput.setText(AccPw[1])
                self.CheckBox.setChecked(True)
+            self.isLogining = False
 
     def login(self):
         
-        account = self.account.text()
-        passwd = self.passwd.text()
-        if PingJwgl():
-            if account == '' or passwd == '':
-                self.showInfoBarFail('账号或密码为空')
-            else:
-                loginSession,accountName = loginJwgl(account,passwd)
-                if loginSession:
-                    self.loginSession = loginSession
-                    self.accountName = accountName
-                    self.account = account
-                    time.sleep(2)    
-                    self.PointerWidget = Pointer(self)
-                    self.PointerWidget.show()
-                    if not os.path.exists('./pointer'):
-                        os.makedirs('./pointer')
-                    with open('./pointer/cache','w',encoding='utf-8') as f:
-                        if self.CheckBox.isChecked():
-                            f.write(account+'\n%%%\n'+passwd)
-                        else:
-                            f.write(account)
-                    self.close()
+        account = self.accountInput.text()
+        passwd = self.passwdInput.text()
+        if not self.isLogining:
+            self.isLogining = True
+            if PingJwgl():
+                if account == '' or passwd == '':
+                    self.showInfoBarFail('账号或密码为空')
                 else:
-                    self.showInfoBarFail('无法登录教务，请检查账号密码')
+                    loginSession,accountName = loginJwgl(account,passwd)
+                    if loginSession:
+                        self.loginSession = loginSession
+                        self.accountName = accountName
+                        self.accountInput = account  
+                        self.PointerWidget = Pointer(self.loginSession,self.accountName,self.accountInput)
+                        self.PointerWidget.show()
+                        if not os.path.exists('./pointer'):
+                            os.makedirs('./pointer')
+                        with open('./pointer/cache','w',encoding='utf-8') as f:
+                            if self.CheckBox.isChecked():
+                                f.write(account+'\n%%%\n'+passwd)
+                            else:
+                                f.write(account)
+                        self.close()
+                    else:
+                        self.showInfoBarFail('无法登录教务，请检查账号密码')
+            else:
+                self.showInfoBarFail('无法连接到教务系统，请检查网络')
+            self.isLogining = False
         else:
-            self.showInfoBarFail('无法连接到教务系统，请检查网络')
+            InfoBar.info(
+            title='!!!',
+            content='登录中请稍后',
+            position=InfoBarPosition.TOP_LEFT,
+            isClosable=False,
+            parent=self,
+            orient= Qt.Horizontal,
+            duration=3000
+        )
 
     def showInfoBarFail(self,msg):
         InfoBar.error(
@@ -58,18 +73,21 @@ class loginUI(FluentWindow,Ui_login):
             position=InfoBarPosition.TOP_LEFT,
             isClosable=False,
             parent=self,
-            orient= Qt.Horizontal
+            orient= Qt.Horizontal,
+            duration=3000
         )
 
   
 
 class Pointer(FluentWindow,Ui_Pointer):
-    def __init__(self,loginWidget) -> None:
+    SearchData = Signal(list)
+    def __init__(self,loginSession,accountName,account) -> None:
         super().__init__()
         self.setupUi(self)
-        self.loginSession = loginWidget.loginSession
-        self.accountName = loginWidget.accountName
-        self.account = loginWidget.account
+        self.setupThread()
+        self.loginSession = loginSession
+        self.accountName = accountName
+        self.account = account
         self.Account.setText(self.account + '-' +  self.accountName)
         time_list = []
         for i in range(10):
@@ -82,35 +100,54 @@ class Pointer(FluentWindow,Ui_Pointer):
         self.TableWidget.setBorderRadius(8)
         self.TableWidget.setWordWrap(False)
         self.TableWidget.setRowCount(0)
-        self.TableWidget.setColumnCount(6)
+        self.TableWidget.setColumnCount(7)
         self.TableWidget.verticalHeader().hide()
-        self.TableWidget.setHorizontalHeaderLabels(['科目', '学分', '期末', '期中', '平时','实验'])
-        self.TableWidget.sizeAdjustPolicy()
-        self.PrimaryPushButton.clicked.connect(self.getPoints)
+        self.TableWidget.setHorizontalHeaderLabels(['科目', '学分', '期末', '期中', '平时','实验','总分'])
+        self.PrimaryPushButton.clicked.connect(self.startSearch)
+        self.Searching = False
  
+    def setupThread(self):
+        self.QThreading = QThread(self)  #创建Qthread
+        self.workThread = SearchWorkThread() #示例化 占时的线程 
+        self.workThread.moveToThread(self.QThreading) #移入到Qthread中
+        self.workThread.send_classesDic.connect(self.setTableWidget) #绑定信号量到更新表格中 传递参数
+        self.SearchData.connect(self.workThread.getPoints) #绑定信号量到 占时的线程 传递参数
 
-    def getPoints(self):
-        tableLists = []
-        # self.StateToolTip = StateToolTip("Processing","获取数据中",self.PrimaryPushButton)
-        # self.StateToolTip.show()
 
 
-        classesDic =  getClassPoint(self.loginSession,self.account,self.ComboBox.text())
-        # print(classesDic)
-        for classID in classesDic.keys():
-            tableLists.append([classesDic[classID][0],
-                         classesDic[classID][1],
-                         classesDic[classID][2][0]+'*'+classesDic[classID][2][1],
-                         classesDic[classID][2][2]+'*'+classesDic[classID][2][3],
-                         classesDic[classID][2][4]+'*'+classesDic[classID][2][5],
-                         classesDic[classID][2][6]+'*'+classesDic[classID][2][7]])
+    def startSearch(self):
+
+        if not self.Searching:
+            self.Searching = True
+            self.StateToolTip = StateToolTip("Processing","获取数据中",self)
+            self.StateToolTip.move(625,640)
+            self.StateToolTip.isClosable = False
+            self.StateToolTip.show()
+            self.QThreading.start()
+            self.SearchData.emit([self.loginSession,self.account,self.ComboBox.text()])
+        else:
+            InfoBar.info(
+            title='!!!',
+            content='查询中请稍后',
+            position=InfoBarPosition.TOP_LEFT,
+            isClosable=False,
+            parent=self,
+            orient= Qt.Horizontal,
+            duration=3000
+        )
+
+
+    def setTableWidget(self,tableLists):
         self.TableWidget.setRowCount(len(tableLists))
         for i, row in enumerate(tableLists):
-            for j in range(6):
+            for j in range(len(row)):
                 self.TableWidget.setItem(i, j, QTableWidgetItem(row[j]))
         self.TableWidget.resizeColumnsToContents()
-        # self.StateToolTip.close()
-    
+        self.StateToolTip.setContent('获取完成')
+        self.StateToolTip.setState(True)
+        self.StateToolTip = None
+        self.Searching = False
+        
     def showSuccessInfoBar(self):
         InfoBar.success(
             title='Success!',
@@ -118,9 +155,36 @@ class Pointer(FluentWindow,Ui_Pointer):
             position=InfoBarPosition.TOP_LEFT,
             isClosable=False,
             parent=self,
-            orient= Qt.Horizontal
+            orient= Qt.Horizontal,
+            duration=3000
         )
 
+class SearchWorkThread(QObject):
+        send_classesDic = Signal(list)
+        def __init__(self) -> None:
+            super().__init__()
+
+        def getPoints(self,SearchData):
+            tableLists = []
+            # classesDic =  getClassPoint(self.loginSession,self.account,self.ComboBox.text())
+            classesDic =  getClassPoint(SearchData[0],SearchData[1],SearchData[2])
+            for classID in classesDic.keys():
+                try:
+                    sumScore = float(classesDic[classID][2][0]) * int(classesDic[classID][2][1].replace('%',''))/100
+                    sumScore += float(classesDic[classID][2][2]) * int(classesDic[classID][2][3].replace('%',''))/100
+                    sumScore += float(classesDic[classID][2][4]) * int(classesDic[classID][2][5].replace('%',''))/100
+                    sumScore += float(classesDic[classID][2][6]) * int(classesDic[classID][2][7].replace('%',''))/100
+                    sumScore = str(round(sumScore,2))
+                except ValueError:
+                    sumScore = 'Error'
+                tableLists.append([classesDic[classID][0],
+                            classesDic[classID][1],
+                            classesDic[classID][2][0]+'*'+classesDic[classID][2][1],
+                            classesDic[classID][2][2]+'*'+classesDic[classID][2][3],
+                            classesDic[classID][2][4]+'*'+classesDic[classID][2][5],
+                            classesDic[classID][2][6]+'*'+classesDic[classID][2][7],
+                            sumScore])
+            self.send_classesDic.emit(tableLists)
 
 def main():
     
