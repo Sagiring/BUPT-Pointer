@@ -1,4 +1,4 @@
-from typing import Optional
+
 from pointer.login_ui import Ui_login
 from pointer.pointer_ui import Ui_Pointer
 from pointer.pointer import (PingJwgl,loginJwgl,getClassPoint)
@@ -17,6 +17,9 @@ class loginUI(FluentWindow,Ui_login):
         self.setupUi(self)
         self.setupThread()
         self.loginPushButton.clicked.connect(self.login)
+        self.isLogining = False
+        if not os.path.exists('./pointer'):
+                    os.makedirs('./pointer')
         if os.path.exists('./pointer/cache'):
             with open('./pointer/cache','r',encoding='utf-8') as f:
                 AccPw = f.read()
@@ -25,7 +28,7 @@ class loginUI(FluentWindow,Ui_login):
             if len(AccPw) == 2:
                self.passwdInput.setText(AccPw[1])
                self.CheckBox.setChecked(True)
-            self.isLogining = False
+        
     def setupThread(self):
         self.QThreading = QThread(self)  #创建Qthread
         self.workThread = loginWorkThread() #示例化 占时的线程 
@@ -62,8 +65,6 @@ class loginUI(FluentWindow,Ui_login):
                 time.sleep(1)
                 self.PointerWidget = Pointer(self.loginSession,self.accountName,self.account)
                 self.PointerWidget.show()
-                if not os.path.exists('./pointer'):
-                    os.makedirs('./pointer')
                 with open('./pointer/cache','w',encoding='utf-8') as f:
                     if self.CheckBox.isChecked():
                         f.write(self.account+'\n%%%\n'+self.passwd)
@@ -153,6 +154,7 @@ class Pointer(FluentWindow,Ui_Pointer):
         self.TableWidget.setHorizontalHeaderLabels(['科目', '学分', '期末', '期中', '平时','实验','总分'])
         self.PrimaryPushButton.clicked.connect(self.startSearch)
         self.Searching = False
+       
  
     def setupThread(self):
         self.QThreading = QThread(self)  #创建Qthread
