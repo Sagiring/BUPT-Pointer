@@ -1,5 +1,7 @@
 # BUPT-Pointer
 
+通过抓取北邮教务数据，进行数据整合。
+
 A tool helps you find all your classes‘ scores.
 
 一个小工具帮助你查询课程详细分数。
