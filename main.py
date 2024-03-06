@@ -4,7 +4,7 @@ from pointer.info_ui import Ui_info
 from pointer.pointer import (PingJwgl,loginJwgl,getClassPoint)
 from PySide6.QtWidgets import (QFrame,QApplication,QTableWidgetItem,QHeaderView)
 from PySide6.QtCore  import (Qt,QObject,QThread,Signal)
-from PySide6.QtGui import (QIcon, QDesktopServices)
+from PySide6.QtGui import (QIcon)
 from qfluentwidgets import (FluentWindow,InfoBar,StateToolTip,InfoBarPosition,FluentIcon)
 import sys
 import time
